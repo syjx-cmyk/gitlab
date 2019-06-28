@@ -1,0 +1,9 @@
+---
+# Download URL of GitLab yum repository install script.
+GITLAB_CE_SCRIPT_URL: https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh
+
+# MD5 checksum of GitLab yum repository install script.
+GITLAB_CE_SCRIPT_CHECKSUM: 7126ee48c720cae634ccfd37501b60c2
+
+# GitLab URL for access from external.
+GITLAB_EXTERNAL_URL: https://example.com/gitlab

@@ -1,0 +1,59 @@
+---
+- name: Ensure GitLab configuration file is exists.
+  stat:
+    path: /etc/gitlab/gitlab.rb
+  register: gitlab_config_file
+
+- name: Ensure yum repository list.
+  shell: "yum repolist | awk '{print $2}'"
+  check_mode: no
+  changed_when: false
+  register: yum_repolist
+
+- name: Install requirement packages.
+  yum:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - openssh-server
+    - policycoreutils-python
+    - curl
+    - postfix
+
+- name: Enable and start requirement services.
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - postfix
+    - sshd
+   
+# Run this task if 'gitlab_gitlab-ce' repository is not exists.  
+- name: Download gitlab-ce repository install script.
+  get_url:
+    url: "{{ GITLAB_CE_SCRIPT_URL }}"
+    checksum: "md5:{{ GITLAB_CE_SCRIPT_CHECKSUM }}"
+    dest: /tmp/gitlab_repository_script.sh
+    group: root
+    owner: root
+    mode: 0700
+  when: yum_repolist.stdout.find('gitlab_gitlab-ce') == -1
+
+- name: Run gitlab-ce repository install script.
+  shell: /tmp/gitlab_repository_script.sh
+  when: yum_repolist.stdout.find('gitlab_gitlab-ce') == -1
+
+- name: Install gitlab-ce.
+  yum:
+    name: gitlab-ce
+    state: latest
+
+- name: Configure gitlab.
+  template:
+    src: gitlab.rb.j2
+    dest: /etc/gitlab/gitlab.rb
+    owner: root
+    group: root
+    mode: 0644
+  notify: Reconfigure gitlab.
